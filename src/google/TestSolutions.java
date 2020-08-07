@@ -6,19 +6,21 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.TreeSet;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -36,8 +38,30 @@ public class TestSolutions {
 	static Set<Integer> probSet = new TreeSet<>();
 	static Map<Integer, String> slugMap = new TreeMap<>();
 	
-	public static final String LEETCODE_PROBLEMS_FILE = "all_probs.json";
+	public static final String LEETCODE_PROBLEMS_OFFLINE_FILE = "all_probs.json";
 	public static final String LEETCODE_PROBLEM_URL = "https://leetcode.com/problems/%s/";
+	public static final String LEETCODE_GET_PROBLEMS_URL = "https://leetcode.com/api/problems/algorithms/";
+	
+	private static String readAll(Reader rd) throws IOException {
+	    StringBuilder sb = new StringBuilder();
+	    int cp;
+	    while ((cp = rd.read()) != -1) {
+	      sb.append((char) cp);
+	    }
+	    return sb.toString();
+	  }
+
+	  public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+	    InputStream is = new URL(url).openStream();
+	    try {
+	      BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+	      String jsonText = readAll(rd);
+	      JSONObject json = new JSONObject(jsonText);
+	      return json;
+	    } finally {
+	      is.close();
+	    }
+	  }
 	
 	public static void removeDuplicates(String inputFile, String outputFile) throws IOException {
 		File input = new File(inputFile);
@@ -55,11 +79,25 @@ public class TestSolutions {
 		}
 		fileWriter.close();
 		*/
-	} 
+	}
+
+	public static void getSlugs(String url) throws JSONException, IOException {
+		JSONObject probsJSON = readJsonFromUrl(url);
+        JSONArray problems = probsJSON.getJSONArray("stat_status_pairs");
+        
+        for(int i = 0; i < problems.length(); i++) {
+        	Integer id = problems.getJSONObject(i).getJSONObject("stat")
+        			.getInt("frontend_question_id");
+        	String slug = problems.getJSONObject(i).getJSONObject("stat")
+        			.getString("question__title_slug");
+        	
+        	slugMap.put(id, slug);
+        }
+	}
 	
 	public static void getSlugs() throws FileNotFoundException {
 		InputStreamReader streamReader = new InputStreamReader(
-				new FileInputStream(LEETCODE_PROBLEMS_FILE), 
+				new FileInputStream(LEETCODE_PROBLEMS_OFFLINE_FILE), 
 				StandardCharsets.UTF_8);
 		Writer writer = new StringWriter();
         char[] buffer = new char[1024];
@@ -70,6 +108,7 @@ public class TestSolutions {
                 writer.write(buffer, 0, n);
             }
             reader.close();
+            writer.close();
         } catch (IOException io) {
             io.printStackTrace();
         } 
@@ -84,8 +123,6 @@ public class TestSolutions {
         	
         	slugMap.put(id, slug);
         }
-        
-        
        
 	}
 	
@@ -110,7 +147,7 @@ public class TestSolutions {
 				"}\n" + 
 				"</style>\n" + 
 				"</head><body><table>");
-		fileWriter.append("<tr><th>Problem Link</th></tr>");
+		fileWriter.append("<tr><th>Need to do Problems Link</th></tr>");
 		for(Map.Entry<Integer, String> e : slugMap.entrySet()) {
 			fileWriter.append("<tr><td>");
 			fileWriter.append("<a href='" + String.format(LEETCODE_PROBLEM_URL, e.getValue()) + "'>");
@@ -125,7 +162,7 @@ public class TestSolutions {
 		
 		try {
 			removeDuplicates("leet_code_premium.txt", "premiums.txt");
-			getSlugs();
+			getSlugs(LEETCODE_GET_PROBLEMS_URL);
 			slugMap.keySet().retainAll(probSet);
 			createHTMLFile("problems_to_do.html");
 		} catch (FileNotFoundException e) {
