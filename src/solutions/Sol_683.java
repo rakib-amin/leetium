@@ -1,4 +1,5 @@
-package google.hard;
+package solutions;
+
 
 public class Sol_683 {
 	

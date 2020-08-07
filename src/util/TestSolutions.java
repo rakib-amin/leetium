@@ -1,4 +1,4 @@
-package google;
+package util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -150,8 +150,7 @@ public class TestSolutions {
 		fileWriter.append("<tr><th>Need to do Problems Link</th></tr>");
 		for(Map.Entry<Integer, String> e : slugMap.entrySet()) {
 			fileWriter.append("<tr><td>");
-			fileWriter.append("<a href='" + String.format(LEETCODE_PROBLEM_URL, e.getValue()) + "'>");
-			fileWriter.append(e.getKey() + "</a>");
+			fileWriter.append("<a href='" + String.format(LEETCODE_PROBLEM_URL, e.getValue()) + "'>" + e.getKey() + "</a>");
 			fileWriter.append("</td></tr>");
 		}
 		fileWriter.append("</table></body></html>");
